@@ -246,7 +246,7 @@ cc_test {{
         }
     }
 
-    fn extend_module(&self, target: &Path, mut module: SoongModule) -> Result<SoongModule, String> {
+       fn extend_module(&self, target: &Path, mut module: SoongModule) -> Result<SoongModule, String> {
         let is_test_spir = target.ends_with("test_spir");
         let data = if target.ends_with("test_compiler") {
             COMPILER_DATA
@@ -260,10 +260,18 @@ cc_test {{
         let defaults = if target.ends_with("libharness.a") {
             CcDefaults::OpenclCtsManual
         } else {
+            let fname = file_name(target);
+            if fname == "test_api" || fname == "test_basic" || fname == "test_events" || fname == "test_device_execution" {
+                module = module.add_prop(
+                    "test_suites",
+                    SoongProp::VecStr(vec![String::from("device-pixel-tests")]),
+                );
+            }
+
             module = module.add_prop(
                 "test_config",
                 SoongProp::Str(
-                    String::from("android/") + self.get_name() + "-" + &file_name(target) + ".xml",
+                    String::from("android/") + self.get_name() + "-" + &fname + ".xml",
                 ),
             );
             CcDefaults::OpenclCts
@@ -277,6 +285,7 @@ cc_test {{
         }
         Ok(module)
     }
+
     fn extend_custom_command(
         &self,
         _target: &Path,
